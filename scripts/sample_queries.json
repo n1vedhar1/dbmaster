@@ -1,0 +1,13 @@
+{
+    "version": "1.0",
+    "description": "Sample queries for the LEGO database schema",
+    "queries": [
+        {
+            "name": ["Get Purchase Orders with Line Items", "Get orders with items"],
+            "description": "Retrieve purchase orders with their associated line items, including quantities and status",
+            "query": "SELECT * from order_purchase_order_line_items where purchase_order_id = ( SELECT id from order_purchase_orders where order_number = '9410215014' )",
+            "category": "purchase_orders",
+            "related_tables": ["order_purchase_orders", "order_purchase_order_line_items"]
+        }
+    ]
+} 

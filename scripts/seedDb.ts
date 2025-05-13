@@ -23,19 +23,36 @@ const splitter = new RecursiveCharacterTextSplitter({
   chunkOverlap: 100,
 });
 
+// Create a separate splitter for queries that preserves query integrity
+const querySplitter = new RecursiveCharacterTextSplitter({
+  chunkSize: 512,
+  chunkOverlap: 100,
+  separators: ["\n\n", "\n", " ", ""], // This ensures we don't split within queries
+});
+
 const createTable = async () => {
   const client = await pool.connect();
   try {
-    // Create the table with vector support
+    // Drop the table if it exists and create it fresh with vector support
     await client.query(`
+      DROP TABLE IF EXISTS schema_chunks;
       CREATE EXTENSION IF NOT EXISTS vector;
-      CREATE TABLE IF NOT EXISTS document_chunks (
+      CREATE TABLE schema_chunks (
         id SERIAL PRIMARY KEY,
         text TEXT NOT NULL,
         embedding vector(1536)
       );
     `);
-    console.log('Table created successfully');
+    console.log('Schema chunks table created successfully');
+    await client.query(`
+      DROP TABLE IF EXISTS query_chunks;
+      CREATE TABLE query_chunks (
+        id SERIAL PRIMARY KEY,
+        text TEXT NOT NULL,
+        embedding vector(1536)
+      );
+    `);
+    console.log('Query chunks table created successfully');
   } catch (error) {
     console.error('Error creating table:', error);
     throw error;
@@ -50,6 +67,15 @@ const loadData = async () => {
     const data = JSON.parse(fs.readFileSync(path.join(__dirname, "schema.json"), "utf8"));
     const dataString = JSON.stringify(data, null, 2);
     const chunks = await splitter.splitText(dataString);
+
+    const queryData = JSON.parse(fs.readFileSync(path.join(__dirname, "sample_queries.json"), "utf8"));
+    // Process each query individually to ensure they stay intact
+    const queryChunks = [];
+    for (const query of queryData.queries) {
+      const queryString = JSON.stringify(query);
+      const chunks = await querySplitter.splitText(queryString);
+      queryChunks.push(...chunks);
+    }
     
     for (const chunk of chunks) {
       const embedding = await openai.embeddings.create({
@@ -64,10 +90,27 @@ const loadData = async () => {
       const vectorString = `[${vector.join(',')}]`;
       
       await client.query(
-        'INSERT INTO document_chunks (text, embedding) VALUES ($1, $2::vector)',
+        'INSERT INTO schema_chunks (text, embedding) VALUES ($1, $2::vector)',
         [chunk, vectorString]
       );
-      console.log('Inserted chunk');
+      console.log('Inserted schema chunk');
+    }
+
+    for (const chunk of queryChunks) {
+      const embedding = await openai.embeddings.create({
+        model: "text-embedding-3-small",
+        input: chunk,
+        encoding_format: "float",
+      });
+
+      const vector = embedding.data[0].embedding;
+      const vectorString = `[${vector.join(',')}]`;
+
+      await client.query(
+        'INSERT INTO query_chunks (text, embedding) VALUES ($1, $2::vector)',
+        [chunk, vectorString]
+      );
+      console.log('Inserted query chunk');
     }
   } catch (error) {
     console.error('Error loading data:', error);
