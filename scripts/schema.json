@@ -1,0 +1,348 @@
+{
+    "schema_version": "7.2",
+    "database_name": "LEGO",
+    "enum_usage_guide": "When querying enum fields, use the numeric values in WHERE clauses. For example, to find Import purchase orders, use WHERE purchase_order_type = 1",
+    "tables": [
+      {
+        "name": "order_purchase_orders",
+        "description": "Stores purchase order information including vendor and delivery details",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "external_po_id", "type": "string", "example": "PO.9410215014", "description": "External reference ID with prefix (PO., SR., ST., etc.)"},
+          {"name": "business_unit", "type": "string"},
+          {"name": "purchase_order_date", "type": "date"},
+          {"name": "vendor_reference", "type": "string"},
+          {"name": "buyer_code", "type": "string"},
+          {"name": "purchase_order_type", "type": "integer", "enum": {
+            "mapping": {
+              "Local": 0,
+              "Import": 1,
+              "Flow Through": 2,
+              "Transfer": 3,
+              "Tugu": 4,
+              "Intercompany": 5,
+              "Sales Return": 6
+            }
+          }},
+          {"name": "seller_address", "type": "string"},
+          {"name": "seller_city", "type": "string"},
+          {"name": "buyer_name", "type": "string"},
+          {"name": "buyer_address", "type": "string"},
+          {"name": "buyer_city", "type": "string"},
+          {"name": "expected_receipt_date", "type": "date"},
+          {"name": "notes", "type": "text"},
+          {"name": "status", "type": "integer", "default": 0, "enum": {
+            "mapping": {
+              "New Order": 0,
+              "In Receiving": 1,
+              "Partially Received": 2,
+              "Closed": 3,
+              "Verified": 4,
+              "Received": 5
+            }
+          }},
+          {"name": "order_number", "type": "string", "example": "9410214997", "description": "Numeric order number without prefix"},
+          {"name": "vendor_name", "type": "string"},
+          {"name": "warehouse_code", "type": "string"},
+          {"name": "document_processed", "type": "boolean", "default": false},
+          {"name": "aju_number", "type": "string", "default": "", "null": false},
+          {"name": "delivery_number", "type": "string", "default": "", "null": false},
+          {"name": "sap_document_number", "type": "string"},
+          {"name": "created_by", "type": "string"},
+          {"name": "updated_by", "type": "string"}
+        ]
+      },
+      {
+        "name": "order_purchase_order_line_items",
+        "description": "Stores individual line items for purchase orders including quantities and status",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "description", "type": "string"},
+          {"name": "sku_profiled", "type": "boolean"},
+          {"name": "status", "type": "integer", "default": 0, "enum": {
+            "mapping": {
+              "New": 0,
+              "In Progress": 1,
+              "Partially Received": 2,
+              "Completed": 3,
+              "Rejected": 4,
+              "Cancelled": 5
+            }
+          }},
+          {"name": "ordered_quantity", "type": "integer", "default": 0},
+          {"name": "received_quantity", "type": "integer", "default": 0},
+          {"name": "adjusted_quantity", "type": "integer", "default": 0},
+          {"name": "rejected_quantity", "type": "integer", "default": 0},
+          {"name": "uom", "type": "string"},
+          {"name": "hold_code", "type": "string"},
+          {"name": "location", "type": "string"},
+          {"name": "purchase_order_id", "type": "bigint", "null": false},
+          {"name": "sku", "type": "string"},
+          {"name": "department", "type": "string"},
+          {"name": "sku_type", "type": "string"},
+          {"name": "item_number", "type": "integer"},
+          {"name": "site_code", "type": "string"},
+          {"name": "flow_through_quantity", "type": "integer", "default": 0},
+          {"name": "has_sku_mismatch", "type": "boolean", "default": false},
+          {"name": "warehouse_code", "type": "string"},
+          {"name": "created_by", "type": "string"},
+          {"name": "updated_by", "type": "string"}
+        ]
+      },
+      {
+        "name": "dock_schedule_armada_dock_schedules",
+        "description": "Stores dock scheduling information for armadas including timing and status",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "armada", "type": "string"},
+          {"name": "armada_type", "type": "string"},
+          {"name": "cbm", "type": "float"},
+          {"name": "weight", "type": "float"},
+          {"name": "queue", "type": "integer"},
+          {"name": "current_location", "type": "string"},
+          {"name": "driver_name", "type": "string"},
+          {"name": "driver_phone_number", "type": "string"},
+          {"name": "eta", "type": "date"},
+          {"name": "unloading_started_at", "type": "datetime"},
+          {"name": "unloading_ended_at", "type": "datetime"},
+          {"name": "start_time", "type": "datetime"},
+          {"name": "end_time", "type": "datetime"},
+          {"name": "warehouse_code", "type": "string"},
+          {"name": "armada_category", "type": "string"},
+          {"name": "created_by", "type": "string"},
+          {"name": "updated_by", "type": "string"}
+        ]
+      },
+      {
+        "name": "dock_schedule_armada_activities",
+        "description": "Tracks activities related to dock scheduling and armada movements",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "armada_dock_schedule_id", "type": "bigint", "null": false},
+          {"name": "note", "type": "string"},
+          {"name": "primary_approver_id", "type": "bigint"},
+          {"name": "secondary_approver_id", "type": "bigint"},
+          {"name": "activity_type", "type": "integer", "default": 0},
+          {"name": "warehouse_code", "type": "string"},
+          {"name": "created_by", "type": "string"},
+          {"name": "updated_by", "type": "string"},
+          {"name": "physical_check_in_metadata", "type": "jsonb"}
+        ]
+      },
+      {
+        "name": "alternative_skus",
+        "description": "Maps alternative SKU codes to primary SKUs for different warehouses",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "warehouse_code", "type": "string"},
+          {"name": "alternative_sku_code", "type": "string"},
+          {"name": "profiling_code", "type": "string"},
+          {"name": "created_by", "type": "string"},
+          {"name": "updated_by", "type": "string"},
+          {"name": "business_unit_id", "type": "bigint", "null": false},
+          {"name": "sku_id", "type": "bigint", "null": false},
+          {"name": "default_uom_id", "type": "bigint", "null": false}
+        ]
+      },
+      {
+        "name": "audits",
+        "description": "Tracks changes to audited models for audit trail purposes",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "auditable_id", "type": "integer"},
+          {"name": "auditable_type", "type": "string"},
+          {"name": "associated_id", "type": "integer"},
+          {"name": "associated_type", "type": "string"},
+          {"name": "user_id", "type": "integer"},
+          {"name": "user_type", "type": "string"},
+          {"name": "username", "type": "string"},
+          {"name": "action", "type": "string"},
+          {"name": "audited_changes", "type": "jsonb"},
+          {"name": "version", "type": "integer", "default": 0},
+          {"name": "comment", "type": "string"},
+          {"name": "remote_address", "type": "string"},
+          {"name": "request_uuid", "type": "string"},
+          {"name": "created_at", "type": "datetime"}
+        ]
+      },
+      {
+        "name": "business_units",
+        "description": "Stores information about different business units in the organization",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "name", "type": "string"},
+          {"name": "description", "type": "string"},
+          {"name": "code", "type": "string"},
+          {"name": "created_at", "type": "datetime", "null": false},
+          {"name": "updated_at", "type": "datetime", "null": false},
+          {"name": "created_by", "type": "integer"},
+          {"name": "updated_by", "type": "integer"}
+        ]
+      },
+      {
+        "name": "departments",
+        "description": "Stores department information within the organization",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "name", "type": "string"},
+          {"name": "code", "type": "string"},
+          {"name": "description", "type": "string"},
+          {"name": "created_by", "type": "string"},
+          {"name": "updated_by", "type": "string"}
+        ]
+      },
+      {
+        "name": "locations",
+        "description": "Stores warehouse location information including dimensions and capacity",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "warehouse_code", "type": "string"},
+          {"name": "location", "type": "string"},
+          {"name": "length", "type": "float"},
+          {"name": "width", "type": "float"},
+          {"name": "height", "type": "float"},
+          {"name": "location_type", "type": "string"},
+          {"name": "location_flag", "type": "string"},
+          {"name": "location_handling", "type": "integer"},
+          {"name": "location_category", "type": "string"},
+          {"name": "logic_allocation", "type": "string"},
+          {"name": "cubic_capacity", "type": "float"},
+          {"name": "weight_capacity", "type": "float"},
+          {"name": "status", "type": "string"},
+          {"name": "putaway_zone_id", "type": "bigint", "null": false}
+        ]
+      },
+      {
+        "name": "skus",
+        "description": "Stores Stock Keeping Unit information including dimensions, weights, and handling requirements",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "warehouse_code", "type": "string"},
+          {"name": "active", "type": "boolean"},
+          {"name": "sku_code", "type": "string"},
+          {"name": "description", "type": "string"},
+          {"name": "manufacturer_sku", "type": "string"},
+          {"name": "standard_gross_weight", "type": "decimal", "precision": 10, "scale": 2},
+          {"name": "standard_net_weight", "type": "decimal", "precision": 10, "scale": 2},
+          {"name": "standard_cube", "type": "decimal", "precision": 10, "scale": 2},
+          {"name": "shelf_life_indicator", "type": "boolean", "default": false},
+          {"name": "shelf_life_on_receiving", "type": "integer"},
+          {"name": "min_shelf_life_for_picking", "type": "integer"},
+          {"name": "shelf_life_outbound", "type": "integer"},
+          {"name": "business_unit_id", "type": "bigint"},
+          {"name": "default_uom_id", "type": "bigint"},
+          {"name": "sku_type", "type": "string"}
+        ]
+      },
+      {
+        "name": "warehouses",
+        "description": "Stores warehouse information including location and ownership details",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "name", "type": "string"},
+          {"name": "code", "type": "string"},
+          {"name": "warehouse_site_code", "type": "string"},
+          {"name": "owner", "type": "string"},
+          {"name": "display_name", "type": "string"},
+          {"name": "created_by", "type": "integer"},
+          {"name": "updated_by", "type": "string"}
+        ]
+      },
+      {
+        "name": "dock_schedule_armada_dock_schedule_order_purchase_orders",
+        "description": "Join table connecting dock schedules with purchase orders",
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "armada_dock_schedule_id", "type": "bigint", "null": false},
+          {"name": "purchase_order_id", "type": "bigint", "null": false},
+          {"name": "asn_number", "type": "string"},
+          {"name": "asn_status", "type": "string"},
+          {"name": "verified_and_closed_by", "type": "string"},
+          {"name": "created_at", "type": "datetime", "null": false},
+          {"name": "updated_at", "type": "datetime", "null": false}
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from_table": "alternative_skus",
+        "to_table": "skus",
+        "type": "belongs_to",
+        "foreign_key": "sku_id"
+      },
+      {
+        "from_table": "alternative_skus",
+        "to_table": "business_units",
+        "type": "belongs_to",
+        "foreign_key": "business_unit_id"
+      },
+      {
+        "from_table": "locations",
+        "to_table": "putaway_zones",
+        "type": "belongs_to",
+        "foreign_key": "putaway_zone_id"
+      },
+      {
+        "from_table": "skus",
+        "to_table": "business_units",
+        "type": "belongs_to",
+        "foreign_key": "business_unit_id"
+      },
+      {
+        "from_table": "order_purchase_order_line_items",
+        "to_table": "order_purchase_orders",
+        "type": "belongs_to",
+        "foreign_key": "purchase_order_id",
+        "description": "IMPORTANT: order_purchase_order_line_items.purchase_order_id is the foreign key that references order_purchase_orders.id. There is NO purchase_order_id column in order_purchase_orders table."
+      },
+      {
+        "from_table": "order_purchase_orders",
+        "to_table": "order_purchase_order_line_items",
+        "type": "has_many",
+        "foreign_key": "purchase_order_id",
+        "description": "IMPORTANT: order_purchase_orders.id is the primary key that is referenced by order_purchase_order_line_items.purchase_order_id. The correct JOIN condition is: ON li.purchase_order_id = po.id"
+      },
+      {
+        "from_table": "dock_schedule_armada_activities",
+        "to_table": "dock_schedule_armada_dock_schedules",
+        "type": "belongs_to",
+        "foreign_key": "armada_dock_schedule_id"
+      },
+      {
+        "from_table": "dock_schedule_armada_activities",
+        "to_table": "users",
+        "type": "belongs_to",
+        "foreign_key": "primary_approver_id"
+      },
+      {
+        "from_table": "dock_schedule_armada_activities",
+        "to_table": "users",
+        "type": "belongs_to",
+        "foreign_key": "secondary_approver_id"
+      },
+      {
+        "from_table": "dock_schedule_armada_dock_schedule_order_purchase_orders",
+        "to_table": "dock_schedule_armada_dock_schedules",
+        "type": "belongs_to",
+        "foreign_key": "armada_dock_schedule_id"
+      },
+      {
+        "from_table": "dock_schedule_armada_dock_schedule_order_purchase_orders",
+        "to_table": "order_purchase_orders",
+        "type": "belongs_to",
+        "foreign_key": "purchase_order_id"
+      },
+      {
+        "from_table": "dock_schedule_armada_dock_schedules",
+        "to_table": "order_purchase_orders",
+        "type": "has_many",
+        "through": "dock_schedule_armada_dock_schedule_order_purchase_orders"
+      },
+      {
+        "from_table": "order_purchase_orders",
+        "to_table": "dock_schedule_armada_dock_schedules",
+        "type": "has_many",
+        "through": "dock_schedule_armada_dock_schedule_order_purchase_orders"
+      }
+    ]
+  } 
