@@ -6,6 +6,7 @@
       {
         "name": "order_purchase_orders",
         "description": "Stores purchase order information including vendor and delivery details",
+        "keywords": ["purchase orders", "PO", "orders"],
         "columns": [
           {"name": "id", "type": "bigint", "primary_key": true},
           {"name": "external_po_id", "type": "string", "example": "PO.9410215014", "description": "External reference ID with prefix (PO., SR., ST., etc.)"},
@@ -55,6 +56,8 @@
       {
         "name": "order_purchase_order_line_items",
         "description": "Stores individual line items for purchase orders including quantities and status",
+        "keywords": ["line items", "order items", "PO items", "skus"],
+        "guidelines": "When querying line items, use the purchase_order_id (which is id from order_purchase_orders table) to join with the order_purchase_orders table.",
         "columns": [
           {"name": "id", "type": "bigint", "primary_key": true},
           {"name": "description", "type": "string"},
