@@ -17,7 +17,7 @@ const Home = () => {
    return (
        <main className="min-h-screen bg-gray-100 flex items-center justify-center">
            <div className="h-[90vh] w-2/3 max-w-4xl flex flex-col bg-white rounded-lg shadow-lg">
-               <header className="bg-blue-600 p-4 rounded-t-lg flex items-center justify-between">
+               <header className="bg-slate-800 p-4 rounded-t-lg flex items-center justify-between">
                    <div className="flex items-center gap-3">
                        <div className="bg-white rounded-full w-10 h-10 flex items-center justify-center shadow">
                            <span className="text-2xl">🤖</span>
@@ -59,12 +59,12 @@ const Home = () => {
                            <input
                                onChange={handleInputChange}
                                value={input}
-                               placeholder="Type your message here..."
-                               className="flex-1 p-3 border-2 border-blue-500 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 bg-white shadow-sm placeholder-gray-400"
+                               placeholder="Ask me LEGO things..."
+                               className="flex-1 p-3 border-2 border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-gray-800 bg-white shadow-sm placeholder-gray-400"
                            />
                            <button
                                type="submit"
-                               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow"
+                               className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-full hover:bg-slate-900 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow"
                                disabled={isLoading}
                            >
                                <span className="hidden sm:inline">Send</span>
