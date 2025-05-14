@@ -1,56 +1,82 @@
 "use client"
 
+
 import {useChat} from "ai/react"
 import { Message } from "ai"
+import { FaPaperPlane } from 'react-icons/fa';
+
 
 import Bubble from "./components/Bubble"
 
-const Home = () => {
-    const {append, isLoading, messages, input, handleInputChange, handleSubmit} = useChat();
-    const noMessages = !messages || messages.length === 0;
 
-    return (
-        <main className="min-h-screen bg-gray-50">
-            <div className="max-w-4xl mx-auto p-4">
-                <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">DBMASTER</h1>
-                <section className="bg-white rounded-lg shadow-lg p-6">
-                    <div className="space-y-4 mb-6 min-h-[400px] max-h-[600px] overflow-y-auto ">
-                        {noMessages ? (
-                            <div className="flex items-center justify-center h-[400px]">
-                                <p className="text-gray-500 text-lg">Start a conversation about databases</p>
-                            </div>
-                        ) : (
-                            <>
-                                {messages.map((message, index) => (
-                                    <Bubble key={`message${index}`} message={message} />
-                                ))}
-                                {isLoading && (
-                                    <div className="flex items-center justify-center">
-                                        <div className="animate-pulse text-gray-500">Thinking...</div>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-                    <form onSubmit={handleSubmit} className="flex gap-2">
-                        <input 
-                            onChange={handleInputChange} 
-                            value={input} 
-                            placeholder="Ask me DB things" 
-                            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        <button 
-                            type="submit" 
-                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={isLoading}
-                        >
-                            Send
-                        </button>
-                    </form>
-                </section>
-            </div>
-        </main>
-    )
+const Home = () => {
+   const {append, isLoading, messages, input, handleInputChange, handleSubmit} = useChat();
+   const noMessages = !messages || messages.length === 0;
+
+
+   return (
+       <main className="min-h-screen bg-gray-100 flex items-center justify-center">
+           <div className="h-[90vh] w-2/3 max-w-4xl flex flex-col bg-white rounded-lg shadow-lg">
+               <header className="bg-blue-600 p-4 rounded-t-lg flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                       <div className="bg-white rounded-full w-10 h-10 flex items-center justify-center shadow">
+                           <span className="text-2xl">🤖</span>
+                       </div>
+                       <div>
+                           <h1 className="text-xl font-bold text-white">LEGO DBmaster</h1>
+                           <span className="text-green-200 text-xs flex items-center gap-1">
+                               <span className="inline-block w-2 h-2 bg-green-400 rounded-full"></span>
+                               Online
+                           </span>
+                       </div>
+                   </div>
+                   <button className="text-white opacity-70 hover:opacity-100 text-xl">
+                       ×
+                   </button>
+               </header>
+              
+               <section className="flex-1 overflow-hidden flex flex-col">
+                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                       {noMessages ? (
+                           <div className="flex items-center justify-center h-full">
+                               <p className="text-gray-500 text-lg">Start a conversation about databases</p>
+                           </div>
+                       ) : (
+                           <>
+                               {messages.map((message, index) => (
+                                   <Bubble key={`message${index}`} message={message} />
+                               ))}
+                               {isLoading && (
+                                   <div className="flex items-center justify-center">
+                                       <div className="animate-pulse text-blue-700">Thinking...</div>
+                                   </div>
+                               )}
+                           </>
+                       )}
+                   </div>
+                   <div className="border-t border-gray-200 p-4 bg-white">
+                       <form onSubmit={handleSubmit} className="flex gap-2">
+                           <input
+                               onChange={handleInputChange}
+                               value={input}
+                               placeholder="Type your message here..."
+                               className="flex-1 p-3 border-2 border-blue-500 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 bg-white shadow-sm placeholder-gray-400"
+                           />
+                           <button
+                               type="submit"
+                               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow"
+                               disabled={isLoading}
+                           >
+                               <span className="hidden sm:inline">Send</span>
+                               <FaPaperPlane className="text-lg" />
+                           </button>
+                       </form>
+                   </div>
+               </section>
+           </div>
+       </main>
+   )
 }
+
 
 export default Home;
