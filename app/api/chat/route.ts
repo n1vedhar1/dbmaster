@@ -46,7 +46,7 @@ export async function POST(req: Request) {
                     SELECT text
                     FROM schema_chunks
                     ORDER BY embedding <=> $1::vector
-                    LIMIT 10
+                    LIMIT 5
                 `, [vectorString]);
 
                 // Fetch sample query context
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
                     SELECT text
                     FROM query_chunks
                     ORDER BY embedding <=> $1::vector
-                    LIMIT 10
+                    LIMIT 2
                 `, [vectorString]);
 
                 console.log('Found relevant schema chunks:', schemaResult.rows.length);
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
                     const schemaArray: string[] = schemaResult.rows.map(row => row.text);
                     schemaContext = JSON.stringify(schemaArray);
                     console.log('Schema context length:', schemaContext.length);
-                    console.log('Retrieved schema chunks:', schemaArray);
+                    console.log('Retrieved schema chunks: \n', schemaArray.slice(0, 10).join('\n'));
                 }
 
                 if (sampleQueryResult.rows.length > 0) {
@@ -132,6 +132,7 @@ export async function POST(req: Request) {
             3. When referencing columns from multiple tables, use table aliases to avoid ambiguity
             4. Verify foreign key relationships before writing joins
             5. Include table aliases in the FROM and JOIN clauses for clarity
+            6. when searching, do a case insensitive search
 
             Target Database: PostgreSQL
             Output Format: IMPORTANT - Return ONLY the SELECT query without any explanation or additional text. The response must start with SELECT.
@@ -163,11 +164,11 @@ export async function POST(req: Request) {
             
             const answerTemplate = {
                 role: "system",
-                content: `You are an AI assistant who is structuring answers to questions based on the SQL query results.
+                content: `You are an AI assistant who is structuring answers based on the SQL query results.
                 The results are as follows:
                 ${JSON.stringify(result.rows, null, 2)}
-                The question is as follows:
-                ${lastMessage}
+                query is as follows:
+                ${sqlQuery}
                 context is as follows:
                 ${docContext}
                 -----------------------------------------

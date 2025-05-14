@@ -65,52 +65,68 @@ const loadData = async () => {
   const client = await pool.connect();
   try {
     const data = JSON.parse(fs.readFileSync(path.join(__dirname, "schema.json"), "utf8"));
-    const dataString = JSON.stringify(data, null, 2);
-    const chunks = await splitter.splitText(dataString);
-
-    const queryData = JSON.parse(fs.readFileSync(path.join(__dirname, "sample_queries.json"), "utf8"));
-    // Process each query individually to ensure they stay intact
-    const queryChunks = [];
-    for (const query of queryData.queries) {
-      const queryString = JSON.stringify(query);
-      const chunks = await querySplitter.splitText(queryString);
-      queryChunks.push(...chunks);
-    }
     
-    for (const chunk of chunks) {
+    // Process each table as a single chunk
+    for (const table of data.tables) {
+      const tableString = JSON.stringify(table);
+      
       const embedding = await openai.embeddings.create({
         model: "text-embedding-3-small",
-        input: chunk,
+        input: tableString,
         encoding_format: "float",
       });
 
       const vector = embedding.data[0].embedding;
-      
-      // Convert the vector to a string representation that pgvector can understand
       const vectorString = `[${vector.join(',')}]`;
       
       await client.query(
         'INSERT INTO schema_chunks (text, embedding) VALUES ($1, $2::vector)',
-        [chunk, vectorString]
+        [tableString, vectorString]
       );
-      console.log('Inserted schema chunk');
+      console.log('Inserted schema chunk for table:', table.name);
     }
 
-    for (const chunk of queryChunks) {
+
+    for (const relationship of data.relationships) {
+      const relationshipString = JSON.stringify(relationship);
+
       const embedding = await openai.embeddings.create({
         model: "text-embedding-3-small",
-        input: chunk,
-        encoding_format: "float",
+        input: relationshipString,
       });
 
       const vector = embedding.data[0].embedding;
       const vectorString = `[${vector.join(',')}]`;
 
       await client.query(
-        'INSERT INTO query_chunks (text, embedding) VALUES ($1, $2::vector)',
-        [chunk, vectorString]
+        'INSERT INTO schema_chunks (text, embedding) VALUES ($1, $2::vector)',
+        [relationshipString, vectorString]
       );
-      console.log('Inserted query chunk');
+      console.log(`Inserted schema chunk for relationship: ${relationship.from_table} -> ${relationship.to_table}`);
+    }
+
+    const queryData = JSON.parse(fs.readFileSync(path.join(__dirname, "sample_queries.json"), "utf8"));
+    // Process each query individually to ensure they stay intact
+    for (const query of queryData.queries) {
+      const queryString = JSON.stringify(query);
+      const chunks = await querySplitter.splitText(queryString);
+      
+      for (const chunk of chunks) {
+        const embedding = await openai.embeddings.create({
+          model: "text-embedding-3-small",
+          input: chunk,
+          encoding_format: "float",
+        });
+
+        const vector = embedding.data[0].embedding;
+        const vectorString = `[${vector.join(',')}]`;
+
+        await client.query(
+          'INSERT INTO query_chunks (text, embedding) VALUES ($1, $2::vector)',
+          [chunk, vectorString]
+        );
+        console.log('Inserted query chunk');
+      }
     }
   } catch (error) {
     console.error('Error loading data:', error);

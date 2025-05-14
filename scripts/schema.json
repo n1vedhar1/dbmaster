@@ -1,7 +1,6 @@
 {
-    "schema_version": "7.2",
-    "database_name": "LEGO",
     "enum_usage_guide": "When querying enum fields, use the numeric values in WHERE clauses. For example, to find Import purchase orders, use WHERE purchase_order_type = 1",
+    "dock_guide": "when an armada is checked in, it is considered as booked. when an armada is checked out, it is considered as available. when an armada is open, it is considered as available. when an armada is closed, it is considered as booked. Basically when status is empty or >3, it is considered as booked, else it is available.",
     "tables": [
       {
         "name": "order_purchase_orders",
@@ -94,7 +93,8 @@
       },
       {
         "name": "dock_schedule_armada_dock_schedules",
-        "description": "Stores dock scheduling information for armadas including timing and status",
+        "keywords": ["dock schedule", "armada", "schedule", "armada schedule", "fleet", "vehicle"],
+        "description": "Stores dock scheduling information for armadas including timing and status. It has a many-to-many relationship with order_purchase_orders table through dock_schedule_armada_dock_schedule_order_purchase_orders table.",
         "columns": [
           {"name": "id", "type": "bigint", "primary_key": true},
           {"name": "armada", "type": "string"},
@@ -105,11 +105,11 @@
           {"name": "current_location", "type": "string"},
           {"name": "driver_name", "type": "string"},
           {"name": "driver_phone_number", "type": "string"},
-          {"name": "eta", "type": "date"},
-          {"name": "unloading_started_at", "type": "datetime"},
-          {"name": "unloading_ended_at", "type": "datetime"},
-          {"name": "start_time", "type": "datetime"},
-          {"name": "end_time", "type": "datetime"},
+          {"name": "eta", "type": "date", "description": "Date and time when the armada is expected to arrive at the warehouse"},
+          {"name": "unloading_started_at", "type": "datetime", "description": "Date and time when unloading started"},
+          {"name": "unloading_ended_at", "type": "datetime", "description": "Date and time when unloading ended"},
+          {"name": "start_time", "type": "datetime", "description": "Time when the armada supposed to be unloaded"},
+          {"name": "end_time", "type": "datetime", "description": "Time when the armada supposed to finish unloading"},
           {"name": "warehouse_code", "type": "string"},
           {"name": "armada_category", "type": "string"},
           {"name": "created_by", "type": "string"},
@@ -118,54 +118,26 @@
       },
       {
         "name": "dock_schedule_armada_activities",
-        "description": "Tracks activities related to dock scheduling and armada movements",
+        "description": "Tracks activities related to dock scheduling and armada movements such as check in, check out, physical check in, open armada, close armada, etc.",
         "columns": [
           {"name": "id", "type": "bigint", "primary_key": true},
           {"name": "armada_dock_schedule_id", "type": "bigint", "null": false},
           {"name": "note", "type": "string"},
           {"name": "primary_approver_id", "type": "bigint"},
           {"name": "secondary_approver_id", "type": "bigint"},
-          {"name": "activity_type", "type": "integer", "default": 0},
+          {"name": "activity_type", "type": "integer", "default": 0, "enum": {
+            "mapping": {
+              "check_in": 0,
+              "physical_check_in": 1,
+              "open_armada": 2,
+              "close_armada": 3,
+              "check_out": 4
+            }
+          }},
           {"name": "warehouse_code", "type": "string"},
           {"name": "created_by", "type": "string"},
           {"name": "updated_by", "type": "string"},
           {"name": "physical_check_in_metadata", "type": "jsonb"}
-        ]
-      },
-      {
-        "name": "alternative_skus",
-        "description": "Maps alternative SKU codes to primary SKUs for different warehouses",
-        "columns": [
-          {"name": "id", "type": "bigint", "primary_key": true},
-          {"name": "warehouse_code", "type": "string"},
-          {"name": "alternative_sku_code", "type": "string"},
-          {"name": "profiling_code", "type": "string"},
-          {"name": "created_by", "type": "string"},
-          {"name": "updated_by", "type": "string"},
-          {"name": "business_unit_id", "type": "bigint", "null": false},
-          {"name": "sku_id", "type": "bigint", "null": false},
-          {"name": "default_uom_id", "type": "bigint", "null": false}
-        ]
-      },
-      {
-        "name": "audits",
-        "description": "Tracks changes to audited models for audit trail purposes",
-        "columns": [
-          {"name": "id", "type": "bigint", "primary_key": true},
-          {"name": "auditable_id", "type": "integer"},
-          {"name": "auditable_type", "type": "string"},
-          {"name": "associated_id", "type": "integer"},
-          {"name": "associated_type", "type": "string"},
-          {"name": "user_id", "type": "integer"},
-          {"name": "user_type", "type": "string"},
-          {"name": "username", "type": "string"},
-          {"name": "action", "type": "string"},
-          {"name": "audited_changes", "type": "jsonb"},
-          {"name": "version", "type": "integer", "default": 0},
-          {"name": "comment", "type": "string"},
-          {"name": "remote_address", "type": "string"},
-          {"name": "request_uuid", "type": "string"},
-          {"name": "created_at", "type": "datetime"}
         ]
       },
       {
@@ -256,11 +228,62 @@
         "description": "Join table connecting dock schedules with purchase orders",
         "columns": [
           {"name": "id", "type": "bigint", "primary_key": true},
-          {"name": "armada_dock_schedule_id", "type": "bigint", "null": false},
-          {"name": "purchase_order_id", "type": "bigint", "null": false},
+          {"name": "armada_dock_schedule_id", "type": "bigint", "null": false, "description": "This is the id from dock_schedule_armada_dock_schedules table."},
+          {"name": "purchase_order_id", "type": "bigint", "null": false, "description": "This is the id from order_purchase_orders table. Find id from order_purchase_orders table order_number."},
           {"name": "asn_number", "type": "string"},
           {"name": "asn_status", "type": "string"},
           {"name": "verified_and_closed_by", "type": "string"},
+          {"name": "created_at", "type": "datetime", "null": false},
+          {"name": "updated_at", "type": "datetime", "null": false}
+        ]
+      },
+      {
+        "name": "dock_schedule_docks",
+        "description": "Stores information about warehouse docks including their status and validity period. A dock's availability is determined by its activities - it is considered available if there are no activities for a date or if the last activity type is greater than 3 (check_out). Otherwise, it is considered booked.",
+        "keywords": ["docks", "warehouse docks", "dock schedule"],
+        "availability_calculation": {
+          "description": "To determine if a dock is available for a specific date:",
+          "steps": [
+            "1. Get all activities for the dock on the specified date by joining with dock_schedule_armada_dock_schedules and dock_schedule_armada_activities tables",
+            "2. If there are no activities for that date, the dock is AVAILABLE",
+            "3. If there are activities, check the last activity's type:",
+            "   - If the last activity type is greater than 3 (check_out = 4), the dock is AVAILABLE",
+            "   - If the last activity type is 3 or less (check_in = 0, physical_check_in = 1, open_armada = 2, close_armada = 3), the dock is BOOKED"
+          ],
+          "important_notes": [
+            "The availability is determined by the sequence of activities, not just the presence of a booking",
+            "A dock can transition between available and booked states multiple times in a day",
+            "The last activity type is the only one that matters for determining current availability",
+            "Activity types 0-3 indicate the dock is in use (booked)",
+            "Activity type 4 (check_out) indicates the dock is free (available)"
+          ]
+        },
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "name", "type": "string", "description": "Name or identifier of the dock"},
+          {"name": "status", "type": "integer", "default": 0, "null": false, "description": "Current status of the dock", "enum": {
+            "mapping": {
+              "active": 0,
+              "inactive": 1
+            }
+          }},
+          {"name": "warehouse_code", "type": "string", "description": "Code of the warehouse this dock belongs to"},
+          {"name": "valid_from", "type": "datetime", "description": "Start date and time when the dock becomes valid"},
+          {"name": "valid_to", "type": "datetime", "description": "End date and time when the dock validity expires"},
+          {"name": "created_by", "type": "string", "description": "User who created the dock record"},
+          {"name": "updated_by", "type": "string", "description": "User who last updated the dock record"},
+          {"name": "created_at", "type": "datetime", "null": false},
+          {"name": "updated_at", "type": "datetime", "null": false}
+        ]
+      },
+      {
+        "name": "dock_schedule_armada_dock_schedules_docks",
+        "description": "Join table that connects armada dock schedules with docks, enabling many-to-many relationship between docks and armada schedules",
+        "keywords": ["docks", "armada schedules", "join table"],
+        "columns": [
+          {"name": "id", "type": "bigint", "primary_key": true},
+          {"name": "armada_dock_schedule_id", "type": "bigint", "null": false, "description": "This is the id from dock_schedule_armada_dock_schedules table."},
+          {"name": "dock_id", "type": "bigint", "null": false, "description": "This is the id from dock_schedule_docks table."},
           {"name": "created_at", "type": "datetime", "null": false},
           {"name": "updated_at", "type": "datetime", "null": false}
         ]
@@ -268,18 +291,7 @@
     ],
     "relationships": [
       {
-        "from_table": "alternative_skus",
-        "to_table": "skus",
-        "type": "belongs_to",
-        "foreign_key": "sku_id"
-      },
-      {
-        "from_table": "alternative_skus",
-        "to_table": "business_units",
-        "type": "belongs_to",
-        "foreign_key": "business_unit_id"
-      },
-      {
+        "relationship_context": "Each location belongs to exactly one putaway zone, which determines where items can be stored. The putaway_zone_id in locations table references the id in putaway_zones table.",
         "from_table": "locations",
         "to_table": "putaway_zones",
         "type": "belongs_to",
@@ -289,63 +301,91 @@
         "from_table": "skus",
         "to_table": "business_units",
         "type": "belongs_to",
-        "foreign_key": "business_unit_id"
+        "foreign_key": "business_unit_id",
+        "relationship_context": "Each SKU (Stock Keeping Unit) belongs to one business unit. The business_unit_id in skus table references the id in business_units table."
       },
       {
         "from_table": "order_purchase_order_line_items",
         "to_table": "order_purchase_orders",
         "type": "belongs_to",
         "foreign_key": "purchase_order_id",
-        "description": "IMPORTANT: order_purchase_order_line_items.purchase_order_id is the foreign key that references order_purchase_orders.id. There is NO purchase_order_id column in order_purchase_orders table."
+        "relationship_context": "Each line item belongs to exactly one purchase order. The purchase_order_id in order_purchase_order_line_items table references the id in order_purchase_orders table. This is a one-to-many relationship where one purchase order can have multiple line items."
       },
       {
         "from_table": "order_purchase_orders",
         "to_table": "order_purchase_order_line_items",
         "type": "has_many",
         "foreign_key": "purchase_order_id",
-        "description": "IMPORTANT: order_purchase_orders.id is the primary key that is referenced by order_purchase_order_line_items.purchase_order_id. The correct JOIN condition is: ON li.purchase_order_id = po.id"
+        "relationship_context": "Each purchase order can have multiple line items. The id in order_purchase_orders table is referenced by purchase_order_id in order_purchase_order_line_items table. This is a one-to-many relationship."
       },
       {
         "from_table": "dock_schedule_armada_activities",
         "to_table": "dock_schedule_armada_dock_schedules",
         "type": "belongs_to",
-        "foreign_key": "armada_dock_schedule_id"
+        "foreign_key": "armada_dock_schedule_id",
+        "relationship_context": "Each activity record belongs to one dock schedule. The armada_dock_schedule_id in activities table references the id in dock_schedule_armada_dock_schedules table."
       },
       {
         "from_table": "dock_schedule_armada_activities",
         "to_table": "users",
         "type": "belongs_to",
-        "foreign_key": "primary_approver_id"
+        "foreign_key": "primary_approver_id",
+        "relationship_context": "Each activity can have one primary approver (user). The primary_approver_id in activities table references the id in users table."
       },
       {
         "from_table": "dock_schedule_armada_activities",
         "to_table": "users",
         "type": "belongs_to",
-        "foreign_key": "secondary_approver_id"
+        "foreign_key": "secondary_approver_id",
+        "relationship_context": "Each activity can have one secondary approver (user). The secondary_approver_id in activities table references the id in users table."
       },
       {
         "from_table": "dock_schedule_armada_dock_schedule_order_purchase_orders",
         "to_table": "dock_schedule_armada_dock_schedules",
         "type": "belongs_to",
-        "foreign_key": "armada_dock_schedule_id"
+        "foreign_key": "armada_dock_schedule_id",
+        "relationship_context": "This is a join table entry that belongs to one dock schedule. The armada_dock_schedule_id references the id in dock_schedule_armada_dock_schedules table."
       },
       {
         "from_table": "dock_schedule_armada_dock_schedule_order_purchase_orders",
         "to_table": "order_purchase_orders",
         "type": "belongs_to",
-        "foreign_key": "purchase_order_id"
+        "foreign_key": "purchase_order_id",
+        "relationship_context": "This is a join table entry that belongs to one purchase order. The purchase_order_id references the id in order_purchase_orders table."
       },
       {
         "from_table": "dock_schedule_armada_dock_schedules",
         "to_table": "order_purchase_orders",
         "type": "has_many",
-        "through": "dock_schedule_armada_dock_schedule_order_purchase_orders"
+        "through": "dock_schedule_armada_dock_schedule_order_purchase_orders",
+        "relationship_context": "A dock schedule can be associated with multiple purchase orders through the join table dock_schedule_armada_dock_schedule_order_purchase_orders. This is a many-to-many relationship."
       },
       {
         "from_table": "order_purchase_orders",
         "to_table": "dock_schedule_armada_dock_schedules",
         "type": "has_many",
-        "through": "dock_schedule_armada_dock_schedule_order_purchase_orders"
+        "through": "dock_schedule_armada_dock_schedule_order_purchase_orders",
+        "relationship_context": "A purchase order can be associated with multiple dock schedules through the join table dock_schedule_armada_dock_schedule_order_purchase_orders. This is a many-to-many relationship."
+      },
+      {
+        "from_table": "dock_schedule_docks",
+        "to_table": "dock_schedule_armada_dock_schedules_docks",
+        "type": "has_many",
+        "relationship_context": "A dock can have multiple armada dock schedule associations through the join table. This is a many-to-many relationship."
+      },
+      {
+        "from_table": "dock_schedule_armada_dock_schedules_docks",
+        "to_table": "dock_schedule_armada_dock_schedules",
+        "type": "belongs_to",
+        "foreign_key": "armada_dock_schedule_id",
+        "relationship_context": "Each join table entry belongs to one armada dock schedule. The armada_dock_schedule_id references the id in dock_schedule_armada_dock_schedules table."
+      },
+      {
+        "from_table": "dock_schedule_armada_dock_schedules_docks",
+        "to_table": "dock_schedule_docks",
+        "type": "belongs_to",
+        "foreign_key": "dock_id",
+        "relationship_context": "Each join table entry belongs to one dock. The dock_id references the id in dock_schedule_docks table."
       }
     ]
   } 

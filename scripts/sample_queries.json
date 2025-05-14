@@ -1,5 +1,4 @@
 {
-    "version": "1.0",
     "description": "Sample queries for the LEGO database schema",
     "queries": [
         {
@@ -8,6 +7,27 @@
             "query": "SELECT * from order_purchase_order_line_items where purchase_order_id = ( SELECT id from order_purchase_orders where order_number = '9410215014' )",
             "category": "purchase_orders",
             "related_tables": ["order_purchase_orders", "order_purchase_order_line_items"]
+        },
+        {
+            "name": ["Get Purchase Order Details", "Get order details"],
+            "description": "Retrieve details of a specific purchase order, including vendor and delivery details",
+            "query": "SELECT * from order_purchase_orders where order_number = '9410215014'",
+            "category": "purchase_orders",
+            "related_tables": ["order_purchase_orders", "order_purchase_order_line_items"]
+        },
+        {
+            "name": ["availability of docks"],
+            "description": "Retrieve the availability of dock",
+            "query": "SELECT dsa.* FROM dock_schedule_armada_activities dsa JOIN dock_schedule_armada_dock_schedules_docks dsadd ON dsa.armada_dock_schedule_id = dsadd.armada_dock_schedule_id JOIN dock_schedule_docks dsd ON dsadd.dock_id = dsd.id WHERE dsd.name = 'D48';",
+            "category": "dock_schedule",
+            "related_tables": ["dock_schedule_armada_activities", "dock_schedule_armada_dock_schedules_docks", "dock_schedule_docks"]
+        },
+        {
+            "name": ["Get armada dock schedule for an order"],
+            "description": "Retrieve the armada dock schedule for an order",
+            "query": "SELECT dsads.* FROM dock_schedule_armada_dock_schedules dsads JOIN dock_schedule_armada_dock_schedule_order_purchase_orders dsadsopo ON dsads.id = dsadsopo.armada_dock_schedule_id WHERE dsadsopo.purchase_order_id = 4;",
+            "category": "dock_schedule armada fleet",
+            "related_tables": ["dock_schedule_armada_dock_schedules", "dock_schedule_armada_dock_schedule_order_purchase_orders"]
         }
     ]
-} 
+}
