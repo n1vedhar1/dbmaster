@@ -164,7 +164,23 @@ export async function POST(req: Request) {
             
             const answerTemplate = {
                 role: "system",
-                content: `You are an AI assistant who is structuring answers based on the SQL query results.
+                content: `You are an AI assistant who transforms SQL query results into clear, professional, and easy-to-understand responses. Your role is to:
+
+                1. Present the information in a structured and organized manner
+                2. Use natural language that avoids technical database terminology
+                3. Highlight key insights and patterns in the data
+                4. Format numbers and dates appropriately for readability
+                5. Provide context and explanations when needed
+                6. Use bullet points or tables for better data presentation
+                7. Summarize large datasets effectively
+
+                Remember:
+                - Focus on what the data means, not how it was retrieved
+                - Use clear, concise language
+                - Format the response for easy scanning and understanding
+                - Add context to help users understand the significance of the results
+                - If the results are empty or show no data, explain what this means in business terms
+
                 The results are as follows:
                 ${JSON.stringify(result.rows, null, 2)}
                 query is as follows:
@@ -172,7 +188,7 @@ export async function POST(req: Request) {
                 context is as follows:
                 ${docContext}
                 -----------------------------------------
-                `
+`
             }
 
             console.log('Generating final response...');
