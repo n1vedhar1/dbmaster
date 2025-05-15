@@ -4,7 +4,7 @@
 import {useChat} from "ai/react"
 import { Message } from "ai"
 import { FaPaperPlane } from 'react-icons/fa';
-
+import PromptSuggestions from "./components/PromptSuggestions";
 
 import Bubble from "./components/Bubble"
 
@@ -13,6 +13,14 @@ const Home = () => {
    const {append, isLoading, messages, input, handleInputChange, handleSubmit} = useChat();
    const noMessages = !messages || messages.length === 0;
 
+   const handlePromptClick = (prompt: string) => {
+        const msg: Message = {
+            id: crypto.randomUUID(),
+            content: prompt,
+            role: "user"
+        }
+        append(msg);
+   }
 
    return (
        <main className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -38,8 +46,9 @@ const Home = () => {
                <section className="flex-1 overflow-hidden flex flex-col">
                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
                        {noMessages ? (
-                           <div className="flex items-center justify-center h-full">
+                           <div className="flex items-center justify-between h-full flex-col">
                                <p className="text-gray-500 text-lg">Start a conversation about databases</p>
+                               <PromptSuggestions onPromptClick={handlePromptClick} />
                            </div>
                        ) : (
                            <>
